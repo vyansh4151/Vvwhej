@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BGMI UC Store (Demo)</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:0;background:#0b1220;color:#e8eefc}
+    .wrap{max-width:980px;margin:auto;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .card{background:#111a33;border:1px solid #233055;border-radius:12px;padding:14px}
+    button{background:#4f7cff;border:0;color:white;padding:10px 12px;border-radius:10px;width:100%}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #2a3a67;background:#0e1730;color:#e8eefc}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .small{opacity:.8;font-size:12px;line-height:1.4}
+    a{color:#9bb6ff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>BGMI UC Store (Demo)</h2>
+    <p class="small">Note: This is a template. UC delivery requires manual processing and verification.</p>
+
+    <div class="grid" id="products"></div>
+
+    <h3 style="margin-top:22px;">Checkout</h3>
+
+    <!-- Netlify Forms -->
+    <form name="order" method="POST" data-netlify="true" action="/success.html">
+      <input type="hidden" name="form-name" value="order" />
+
+      <div class="row">
+        <div>
+          <label>BGMI Character ID</label>
+          <input name="bgmi_id" required placeholder="e.g. 5xxxxxxx" />
+        </div>
+        <div>
+          <label>Selected Pack</label>
+          <select name="pack" id="packSelect" required></select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Amount (INR)</label>
+          <input name="amount" id="amount" required readonly />
+        </div>
+        <div>
+          <label>UPI Transaction / UTR (after payment)</label>
+          <input name="utr" required placeholder="12-digit UTR / txn id" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>WhatsApp/Phone (optional)</label>
+        <input name="contact" placeholder="+91..." />
+      </div>
+
+      <div style="margin-top:12px;" class="row">
+        <button type="button" onclick="payNow()">Pay via UPI</button>
+        <button type="submit">Submit Order</button>
+      </div>
+
+      <p class="small" style="margin-top:10px;">
+        Payment opens your UPI app. After payment, come back and submit the UTR so the order can be verified.
+      </p>
+    </form>
+
+    <p class="small">
+      If UPI button doesn’t open on some devices, show QR/alternate link or ask user to copy VPA manually (common limitation of deep links on some browsers/apps). [web:6]
+    </p>
+  </div>
+
+<script>
+  // EDIT THESE:
+  const PAYEE_VPA  = "yourupi@bank";     // pa
+  const PAYEE_NAME = "Your Store";       // pn
+  const CURRENCY   = "INR";              // cu
+
+  const packs = [
+    { name: "60 UC",  amount: 29 },
+    { name: "325 UC", amount: 149 },
+    { name: "660 UC", amount: 299 },
+    { name: "1800 UC", amount: 799 }
+  ];
+
+  const productsDiv = document.getElementById("products");
+  const packSelect  = document.getElementById("packSelect");
+  const amountInput = document.getElementById("amount");
+
+  packs.forEach((p, i) => {
+    const opt = document.createElement("option");
+    opt.value = p.name;
+    opt.textContent = `${p.name} - ₹${p.amount}`;
+    packSelect.appendChild(opt);
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h4>${p.name}</h4><p>Price: ₹${p.amount}</p>
+                      <button type="button">Select</button>`;
+    card.querySelector("button").onclick = () => {
+      packSelect.value = p.name;
+      amountInput.value = p.amount;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    };
+    productsDiv.appendChild(card);
+  });
+
+  function syncAmount() {
+    const p = packs.find(x => x.name === packSelect.value);
+    amountInput.value = p ? p.amount : "";
+  }
+  packSelect.addEventListener("change", syncAmount);
+  syncAmount();
+
+  function payNow(){
+    const amt = encodeURIComponent(amountInput.value);
+    const tn  = encodeURIComponent("BGMI UC Topup"); // tn
+    const pa  = encodeURIComponent(PAYEE_VPA);
+    const pn  = encodeURIComponent(PAYEE_NAME);
+    const cu  = encodeURIComponent(CURRENCY);
+
+    // UPI deep link format: upi://pay?pa=...&pn=...&tn=...&am=...&cu=...
+    const upiLink = `upi://pay?pa=${pa}&pn=${pn}&tn=${tn}&am=${amt}&cu=${cu}`;
+    window.location.href = upiLink;
+  }
+</script>
+</body>
+</html>
